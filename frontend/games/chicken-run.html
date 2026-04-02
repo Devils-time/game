@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Run - Game Zone</title>
+<style>
+  body { 
+    background-color: #0f212e; /* Stake dark blue-grey background */
+    color: #b1bad3; /* Stake text color */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    margin: 0; 
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent body scroll */
+  }
+  
+  /* Top Bar */
+  .header { 
+    display: flex; justify-content: space-between; padding: 15px 20px; 
+    background: #1a2c38;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .btn-back { background: #2f4553; color: #b1bad3; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; transition: background 0.2s; }
+  .btn-back:hover { background: #3d5566; color: white; }
+  
+  .wallet-disp { font-size: 16px; font-weight: bold; color: white; padding: 5px 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px; background: transparent;}
+  .wallet-disp .icon { width: 24px; height: 24px; background: url('../images/wallet-icon.png') no-repeat center/contain; }
+  
+  /* Main Container */
+  .game-wrapper {
+    display: flex;
+    flex: 1;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 20px;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Left Controls Sidebar */
+  .controls-sidebar {
+    width: 300px;
+    background-color: #213743;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  /* Toggles */
+  .toggle-group { display: flex; background: #0f212e; border-radius: 54px; padding: 2px; }
+  .toggle-btn { flex: 1; text-align: center; padding: 10px; color: #b1bad3; font-weight: 600; cursor: pointer; border-radius: 54px; transition: 0.2s; font-size: 14px; }
+  .toggle-btn.active { background: #2f4553; color: white; }
+
+  /* Input Groups */
+  .input-label { font-size: 13px; margin-bottom: 5px; font-weight: 600; color: #b1bad3; display: flex; justify-content: space-between; }
+  .input-box { background: #0f212e; border: 2px solid transparent; border-radius: 4px; display: flex; align-items: center; transition: 0.2s; }
+  .input-box:focus-within { border-color: #2f4553; }
+  .input-box input, .input-box select { background: transparent; border: none; color: white; padding: 12px; font-weight: 600; font-size: 14px; width: 100%; outline: none; flex: 1; -moz-appearance: textfield; appearance: textfield; }
+  .input-box input::-webkit-outer-spin-button, .input-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .input-addon { padding: 0 10px; color: #b1bad3; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+  .action-btns { display: flex; }
+  .action-btns button { background: #2f4553; color: white; border: none; padding: 0 12px; font-weight: 600; cursor: pointer; border-left: 1px solid #0f212e; transition: 0.2s; }
+  .action-btns button:first-child { border-left: none; }
+  .action-btns button:hover { background: #3d5566; }
+
+  /* Action Buttons */
+  .bet-btn { background: #256bf5; color: white; border: none; padding: 16px; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+  .bet-btn.cashout { background: #1fff20; color: #000; box-shadow: 0 0 10px rgba(31, 255, 32, 0.4); }
+  .bet-btn.active-bet { background: #2f4553; color: white; cursor: not-allowed; }
+  .bet-btn:hover:not(.active-bet) { opacity: 0.9; }
+  
+  .go-btn { background: #2f4553; color: white; border: none; padding: 14px; border-radius: 4px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .go-btn.pulse { background: #256bf5; animation: pulseGlow 1.5s infinite; }
+  .go-btn:hover:not(:disabled) { background: #3b7dff; }
+  .go-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; background: #2f4553;}
+
+  @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(37, 107, 245, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 107, 245, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 107, 245, 0); } }
+
+  /* Right Game Area - Horizontal Scrollable */
+  .game-area {
+    flex: 1;
+    background-color: #0d1e29;
+    border-radius: 8px;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    align-items: center;
+    padding: 40px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    white-space: nowrap;
+  }
+  
+  /* Hide scrollbar visually but allow scroll */
+  .game-area::-webkit-scrollbar { height: 8px; }
+  .game-area::-webkit-scrollbar-track { background: #0b1821; border-radius: 4px; }
+  .game-area::-webkit-scrollbar-thumb { background: #2f4553; border-radius: 4px; }
+
+  /* Road Container */
+  .road {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Single Lane */
+  .lane {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100px;
+    height: 100%;
+    position: relative;
+    border-right: 2px dashed #1a2c38; /* Dash lines representing road lanes */
+    padding-bottom: 20px;
+  }
+  .lane.start-lane { border-right: 4px solid #1a2c38; padding-right: 10px; width: 80px; }
+  
+  /* Lane Multiplier Badge */
+  .multi-badge {
+    background: #1a2c38;
+    color: #8790a6;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 13px;
+    margin-top: 20px;
+    transition: 0.3s;
+  }
+  .lane.active .multi-badge { background: #256bf5; color: white; box-shadow: 0 4px 10px rgba(37,107,245,0.4); }
+
+  /* Spot Overlay (the circle above the multiplier) */
+  .spot {
+    width: 60px;
+    height: 60px;
+    background: #1a2c38; /* Default inactive circle */
+    border-radius: 50%;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: inset 0 5px 10px rgba(0,0,0,0.3);
+    transition: 0.3s transform;
+  }
+  
+  /* Icons injected via JS */
+  .spot.safe { background: #214032; /* Greenish */ border: 2px solid #00e701; box-shadow: 0 0 15px rgba(0,231,1,0.2); }
+  .spot.crash { background: #3b0a0a; border: 2px solid #ff2a2a; box-shadow: 0 0 15px rgba(255,42,42,0.4); }
+  
+  /* Animated Chicken */
+  #playerToken {
+    position: absolute;
+    bottom: 120px; /* Above the circle and multiplier */
+    left: 40px; /* Aligned with start lane center */
+    font-size: 45px;
+    transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), bottom 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    z-index: 10;
+    filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+    width: 50px; text-align: center; margin-left: -25px; /* Center horizontally on coordinate */
+  }
+  
+  #playerToken.jump { bottom: 160px; } /* Arc animation hook */
+  
+  #playerToken.dead { transform: rotate(180deg) scale(0.8); filter: grayscale(1); }
+
+  /* Status Overlay */
+  .status-overlay {
+    position: absolute; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    inset: 0; pointer-events: none; z-index: 20;
+    background: rgba(0,0,0,0.6);
+  }
+  .status-banner {
+    background: #1fff20; color: #000; padding: 15px 40px; border-radius: 8px; font-size: 24px; font-weight: 800; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .status-banner.loss { background: #ff2a2a; color: white; }
+  .status-sub { font-size: 16px; margin-top: 5px; opacity: 0.8; }
+  
+  @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+  /* Responsive styling */
+  @media (max-width: 850px) {
+    .game-wrapper { flex-direction: column-reverse; overflow-y: auto; }
+    .controls-sidebar { width: 100%; }
+    .game-area { min-height: 400px; }
+    #playerToken { bottom: 80px; font-size: 35px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="../dashboard.html" class="btn-back">← Back</a>
+  <div class="wallet-disp">
+    <div class="icon"></div>
+    <span id="walletText">₹0.00</span>
+  </div>
+</div>
+
+<div class="game-wrapper">
+  <!-- Sidebar -->
+  <div class="controls-sidebar">
+    <div class="toggle-group"><div class="toggle-btn active" id="manualToggle">Manual</div><div class="toggle-btn" id="autoToggle">Auto</div></div>
+
+    <!-- Bet Amount -->
+    <div>
+      <div class="input-label"><span>Bet Amount</span><span id="maxBetInfo" style="color:#1fff20;cursor:pointer;">₹0.00</span></div>
+      <div class="input-box">
+        <div class="input-addon">₹</div>
+        <input type="number" id="betAmount" value="0.00" min="0" step="0.01">
+        <div class="action-btns"><button id="btnHalf">½</button><button id="btnDouble">2×</button></div>
+      </div>
+    </div>
+
+    <!-- Difficulty -->
+    <div>
+      <div class="input-label">Difficulty</div>
+      <div class="input-box">
+        <select id="difficultySelect">
+          <option value="easy">Easy (20 Lanes)</option>
+          <option value="medium" selected>Medium (15 Lanes)</option>
+          <option value="hard">Hard (10 Lanes)</option>
+        </select>
+        <div class="input-addon">▼</div>
+      </div>
+    </div>
+
+    <button class="bet-btn" id="betBtn">Bet</button>
+    <button class="go-btn" id="goBtn" disabled>Go</button>
+
+    <!-- Profit Indicator -->
+    <div>
+      <div class="input-label"><span>Total Profit (<span id="currentMultiLabel">0.00</span>×)</span></div>
+      <div class="input-box" style="background:#1a2c38;">
+        <div class="input-addon">₹</div>
+        <input type="text" id="totalProfit" value="0.00" disabled style="color:#1fff20;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Area -->
+  <div class="game-area" id="gameArea">
+    <div class="road" id="roadContainer">
+      <!-- Generated by JS -->
+    </div>
+    
+    <!-- The Chicken -->
+    <div id="playerToken">🐔</div>
+    
+    <div class="status-overlay" id="statusOverlay">
+      <div class="status-banner" id="statusBanner">
+        <div id="statusTitle">1.25x</div><div class="status-sub" id="statusSub">Multiplier</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* --- WALLET SIMULATION --- */
+  let walletBalance = parseFloat(localStorage.getItem('walletBalance'));
+  if (isNaN(walletBalance)) { walletBalance = 0; localStorage.setItem('walletBalance', walletBalance.toFixed(2)); }
+  
+  const walletText = document.getElementById('walletText');
+  const maxBetInfo = document.getElementById('maxBetInfo');
+  
+  function updateWalletDisplay() {
+    walletText.innerText = '₹' + walletBalance.toFixed(2);
+    maxBetInfo.innerText = '₹' + walletBalance.toFixed(2);
+    localStorage.setItem('walletBalance', walletBalance.toFixed(2));
+  }
+  updateWalletDisplay();
+
+  /* --- UI COMPONENT VARS --- */
+  const betAmountInput = document.getElementById('betAmount');
+  const btnHalf = document.getElementById('btnHalf');
+  const btnDouble = document.getElementById('btnDouble');
+  const difficultySelect = document.getElementById('difficultySelect');
+  const betBtn = document.getElementById('betBtn');
+  const goBtn = document.getElementById('goBtn');
+  const totalProfitInput = document.getElementById('totalProfit');
+  const currentMultiLabel = document.getElementById('currentMultiLabel');
+  
+  const roadContainer = document.getElementById('roadContainer');
+  const playerToken = document.getElementById('playerToken');
+  const gameArea = document.getElementById('gameArea');
+  
+  const statusOverlay = document.getElementById('statusOverlay');
+  const statusBanner = document.getElementById('statusBanner');
+  const statusTitle = document.getElementById('statusTitle');
+  const statusSub = document.getElementById('statusSub');
+
+  /* --- MATH & CONFIG --- */
+  const HOUSE_EDGE = 0.99;
+  
+  // Custom probabilities tuned properly for Stake feel so Medium reaches ~1.15x per step
+  const diffConfig = {
+    'easy': { lanes: 20, prob: 0.92 },
+    'medium': { lanes: 15, prob: 0.86 },
+    'hard': { lanes: 10, prob: 0.70 }
+  };
+  
+  function getMultiplier(prob, steps) {
+    if (steps === 0) return 0.00;
+    let totalProb = Math.pow(prob, steps);
+    let multi = (1 / totalProb) * 0.99;
+    return Math.floor(multi * 100) / 100; 
+  }
+
+  /* --- GAME STATE --- */
+  let isPlaying = false;
+  let activeGameId = null;
+  let currentDiff = 'medium';
+  let totalLanes = 15;
+  let currentStep = 0;
+  let currentBet = 0;
+  let currentMulti = 0.00;
+  let laneElements = [];
+
+  // Init
+  difficultySelect.addEventListener('change', (e) => {
+    if (isPlaying) return;
+    currentDiff = e.target.value;
+    totalLanes = diffConfig[currentDiff].lanes;
+    drawRoad();
+  });
+
+  btnHalf.onclick = () => { if(!isPlaying) { let v = parseFloat(betAmountInput.value)/2; betAmountInput.value = (v>0?v:0).toFixed(2); } };
+  btnDouble.onclick = () => { if(!isPlaying) { let v = parseFloat(betAmountInput.value)*2; betAmountInput.value = (v>0?v:0).toFixed(2); } };
+  maxBetInfo.onclick = () => { if(!isPlaying) { betAmountInput.value = walletBalance.toFixed(2); } }
+
+  /* --- RENDER ROAD --- */
+  function drawRoad() {
+    roadContainer.innerHTML = '';
+    laneElements = [];
+    
+    let startDiv = document.createElement('div');
+    startDiv.className = 'lane start-lane active';
+    startDiv.innerHTML = `<div class="spot safe" style="visibility:hidden"></div><div class="multi-badge" style="visibility:hidden">Start</div>`;
+    roadContainer.appendChild(startDiv);
+    laneElements.push(startDiv);
+    
+    let prob = diffConfig[currentDiff].prob;
+    for (let i = 1; i <= totalLanes; i++) {
+      let lDiv = document.createElement('div');
+      lDiv.className = 'lane';
+      
+      let multiStr = getMultiplier(prob, i).toFixed(2) + 'x';
+      lDiv.innerHTML = `
+        <div class="spot" id="spot-${i}"></div>
+        <div class="multi-badge">${multiStr}</div>
+      `;
+      roadContainer.appendChild(lDiv);
+      laneElements.push(lDiv);
+    }
+    
+    playerToken.className = '';
+    playerToken.innerText = '🐔';
+    playerToken.style.left = '40px'; 
+    gameArea.scrollLeft = 0;
+    
+    statusOverlay.style.display = 'none';
+  }
+
+  /* --- CORE LOOP --- */
+  betBtn.addEventListener('click', () => {
+    if (!isPlaying) startGame();
+    else cashout();
+  });
+  
+  goBtn.addEventListener('click', () => {
+    if (!isPlaying) return;
+    takeStep();
+  });
+
+  async function startGame() {
+    let bet = parseFloat(betAmountInput.value);
+    if (isNaN(bet) || bet < 0) bet = 0;
+    
+    currentDiff = difficultySelect.value;
+    totalLanes = diffConfig[currentDiff].lanes;
+    
+    betAmountInput.disabled = difficultySelect.disabled = btnHalf.disabled = btnDouble.disabled = true;
+    betBtn.disabled = true;
+    betBtn.innerText = 'CONNECTING...';
+    
+    const res = await apiFetch('start', 'POST', { bet: bet, difficulty: currentDiff });
+    let data;
+    try { data = await res.json(); } catch(e) { panic("SERVER CORRUPTION", "Invalid JSON payload mapping."); }
+    
+    if (!res.ok) {
+       alert(data.detail || "Failed to start server-side game.");
+       betAmountInput.disabled = difficultySelect.disabled = btnHalf.disabled = btnDouble.disabled = false;
+       betBtn.disabled = false;
+       betBtn.innerText = 'Bet';
+       return;
+    }
+    
+    activeGameId = data.game_id;
+    walletBalance = parseFloat(data.wallet_balance);
+    updateWalletDisplay();
+    
+    drawRoad();
+    currentBet = bet;
+    currentStep = 0;
+    currentMulti = 0.00;
+    isPlaying = true;
+    
+    updateProfitUI();
+    
+    betBtn.className = 'bet-btn active-bet';
+    betBtn.disabled = false;
+    betBtn.innerText = 'Bet';
+    goBtn.disabled = false;
+    goBtn.classList.add('pulse');
+  }
+
+  async function takeStep() {
+    if (!isPlaying) return;
+    if (!activeGameId) panic("GAME ID LOST", "Out of sync.");
+    
+    goBtn.disabled = true;
+    goBtn.classList.remove('pulse');
+
+    const res = await apiFetch('jump', 'POST', { game_id: activeGameId });
+    let data;
+    try { data = await res.json(); } catch(e) { panic("JUMP CRASHED", "Node server exploded during jump!"); }
+    
+    if (!res.ok) {
+       panic("ERROR", data.detail || "Server rejected jump.");
+       return;
+    }
+
+    let isSafe = data.status !== 'exploded';
+    
+    currentStep++;
+    
+    let newLeftPos = 40 + (currentStep * 104); 
+    
+    playerToken.classList.add('jump');
+    setTimeout(() => playerToken.classList.remove('jump'), 200);
+    playerToken.style.left = newLeftPos + 'px';
+
+    const scrollTarget = newLeftPos - (gameArea.clientWidth / 2) + 50;
+    if(scrollTarget > gameArea.scrollLeft) {
+       gameArea.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+    }
+
+    setTimeout(() => {
+      let spot = document.getElementById(`spot-${currentStep}`);
+      
+      if (isSafe) {
+        // Success
+        spot.classList.add('safe');
+        spot.innerText = 'S'; 
+        
+        laneElements[currentStep-1].classList.remove('active');
+        laneElements[currentStep].classList.add('active');
+        
+        currentMulti = parseFloat(data.multiplier);
+        updateProfitUI();
+        
+        let payout = currentBet * currentMulti;
+        betBtn.className = 'bet-btn cashout';
+        betBtn.style.backgroundColor = "#1fff20";
+        betBtn.innerText = `Cashout ₹${payout.toFixed(2)}`;
+        
+        if (data.status === 'cashed_out') {
+           walletBalance = parseFloat(data.wallet_balance);
+           updateWalletDisplay();
+           triggerCashoutEnd(data.payout);
+        } else {
+          goBtn.disabled = false;
+          goBtn.classList.add('pulse');
+        }
+      } else {
+        // Fail
+        spot.classList.add('crash');
+        let crashTypes = ['🚓', '🚕', '🔥', '💥'];
+        spot.innerText = crashTypes[Math.floor(Math.random() * crashTypes.length)];
+        
+        playerToken.classList.add('dead');
+        triggerLoss();
+      }
+    }, 400); 
+  }
+
+  function triggerLoss() {
+    isPlaying = false;
+    goBtn.disabled = true;
+    goBtn.classList.remove('pulse');
+    
+    betBtn.className = 'bet-btn';
+    betBtn.style.backgroundColor = "";
+    betBtn.innerText = 'Bet';
+    totalProfitInput.value = "0.00";
+    currentMultiLabel.innerText = "0.00";
+    
+    betAmountInput.disabled = difficultySelect.disabled = btnHalf.disabled = btnDouble.disabled = false;
+    
+    showBanner("0.00x", "Multiplier", true);
+  }
+
+  async function cashout() {
+    if (!isPlaying || currentStep === 0) return;
+    if (!activeGameId) return;
+    
+    betBtn.disabled = true;
+    betBtn.innerText = 'CASHING OUT...';
+    
+    const res = await apiFetch('cashout', 'POST', { game_id: activeGameId });
+    let data;
+    try { data = await res.json(); } catch(e) { panic("CASHOUT CRASHED", "Node server failed cashout transaction!"); }
+
+    if (!res.ok) {
+        panic("CASHOUT ERROR", data.detail || "Server rejected cashout.");
+        return;
+    }
+
+    walletBalance = parseFloat(data.wallet_balance);
+    updateWalletDisplay();
+    triggerCashoutEnd(data.payout);
+  }
+
+  function triggerCashoutEnd(payout) {
+    isPlaying = false;
+    goBtn.disabled = true;
+    goBtn.classList.remove('pulse');
+    
+    betBtn.className = 'bet-btn';
+    betBtn.style.backgroundColor = "";
+    betBtn.innerText = 'Bet';
+    betBtn.disabled = false;
+    
+    betAmountInput.disabled = difficultySelect.disabled = btnHalf.disabled = btnDouble.disabled = false;
+    
+    showBanner(`${currentMulti.toFixed(2)}x`, `Payout ₹${payout.toFixed(2)}`, false);
+  }
+  
+  function updateProfitUI() {
+    let payout = currentBet * currentMulti;
+    totalProfitInput.value = payout.toFixed(2);
+    currentMultiLabel.innerText = (currentMulti === 0 ? "0.00" : currentMulti.toFixed(2));
+  }
+  
+  function showBanner(title, sub, isLoss) {
+    statusBanner.className = isLoss ? 'status-banner loss' : 'status-banner';
+    statusTitle.innerText = title;
+    statusSub.innerText = sub;
+    statusOverlay.style.display = 'flex';
+  }
+
+  drawRoad();
+</script>
+</body>
+</html>

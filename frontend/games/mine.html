@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mines - Game Zone</title>
+<style>
+  body { 
+    background-color: #0f212e; /* Stake dark blue-grey background */
+    color: #b1bad3; /* Stake text color */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    margin: 0; 
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Top Bar */
+  .header { 
+    display: flex; justify-content: space-between; padding: 15px 20px; 
+    background: #1a2c38; /* Slightly lighter header */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    align-items: center;
+  }
+  .btn-back { background: #2f4553; color: #b1bad3; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; transition: background 0.2s; }
+  .btn-back:hover { background: #3d5566; color: white; }
+  
+  .wallet-disp { font-size: 16px; font-weight: bold; color: white; padding: 5px 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px; background: transparent;}
+  .wallet-disp .icon { width: 24px; height: 24px; background: url('../images/wallet-icon.png') no-repeat center/contain; }
+  
+  /* Main Container */
+  .game-wrapper {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: stretch;
+    padding: 20px;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Left Controls Sidebar */
+  .controls-sidebar {
+    width: 300px;
+    background-color: #213743;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Toggles */
+  .toggle-group {
+    display: flex;
+    background: #0f212e;
+    border-radius: 54px;
+    padding: 2px;
+  }
+  .toggle-btn {
+    flex: 1; text-align: center; padding: 10px; color: #b1bad3; font-weight: 600; cursor: pointer; border-radius: 54px; transition: 0.2s; font-size: 14px;
+  }
+  .toggle-btn.active {
+    background: #2f4553; color: white;
+  }
+
+  /* Input Groups */
+  .input-label { font-size: 13px; margin-bottom: 5px; font-weight: 600; color: #b1bad3; display: flex; justify-content: space-between; }
+  .input-box {
+    background: #0f212e;
+    border: 2px solid transparent; /* default */
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: 0.2s;
+  }
+  .input-box:focus-within { border-color: #2f4553; }
+  .input-box input, .input-box select {
+    background: transparent; border: none; color: white; padding: 12px; font-weight: 600; font-size: 14px; width: 100%; outline: none; flex: 1;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .input-box input::-webkit-outer-spin-button,
+  .input-box input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  .input-addon {
+    padding: 0 10px; color: #b1bad3; display: flex; align-items: center; gap: 5px; font-weight: bold;
+  }
+  
+  .action-btns { display: flex; position: relative; }
+  .action-btns button {
+    background: #2f4553; color: white; border: none; padding: 0 12px; font-weight: 600; cursor: pointer; border-left: 1px solid #0f212e; transition: 0.2s;
+  }
+  .action-btns button:first-child { border-left: none; }
+  .action-btns button:hover { background: #3d5566; }
+
+  /* Main Bet Button */
+  .bet-btn {
+    background-color: #1fff20; /* initial: green like stake, or blue */
+    background: #00e701;
+    color: #000;
+    border: none;
+    padding: 16px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 5px;
+    height: 56px;
+  }
+  .bet-btn.active { background: #2f4553; color: white; cursor: not-allowed;}
+  .bet-btn.cashout { background: #1fff20; }
+  .bet-btn:hover:not(.active) { background: #1adb1c; }
+  
+  .random-btn {
+    background: #2f4553; color: white; padding: 12px; border-radius: 4px; font-weight:600; cursor:pointer; font-size:14px; border:none; transition:0.2s;
+  }
+  .random-btn:hover { background: #3d5566; }
+  .random-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Right Game Area */
+  .game-area {
+    flex: 1;
+    background-color: #0f212e; /* Same as body, but visually distinct area */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    position: relative;
+  }
+
+  .mines-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 500px; /* control grid strictness */
+    aspect-ratio: 1;
+  }
+
+  .tile {
+    background-color: #2f4553;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 0 0 #213743;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(0);
+    position: relative;
+    user-select: none;
+  }
+  /* Active game hover effect */
+  .mines-grid.active .tile:not(.revealed):hover {
+    background-color: #3d5566;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 0 #213743;
+  }
+  /* Clicked animation */
+  .tile:active:not(.revealed) {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 #213743;
+  }
+
+  .tile.revealed {
+    background-color: #0f212e;
+    box-shadow: none;
+    cursor: default;
+    transform: translateY(4px);
+  }
+
+  .tile img { max-width: 60%; max-height: 60%; opacity: 0; transition: opacity 0.2s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0.5); }
+  .tile.revealed img { opacity: 1; transform: scale(1); }
+  
+  .tile.revealed.gem { background-color: #071824; }
+  .tile.revealed.mine { background-color: #071824; }
+  
+  /* The explosion animation if you hit it */
+  .tile.exploded { background-color: #170707; }
+
+  /* Multiplier popup element inside tile */
+  .tile .multi-text {
+    display: none; position: absolute; font-size: 14px; font-weight: bold; color: white;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+  
+  /* Status Overlay */
+  .status-overlay {
+    position: absolute; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    inset: 0; pointer-events: none; z-index: 20;
+    animation: fadeIn 0.3s forwards;
+  }
+  .status-banner {
+    background: #1fff20; color: #000; padding: 15px 40px; border-radius: 8px; font-size: 24px; font-weight: 800; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .status-banner.loss { background: #ff2a2a; color: white; }
+
+  .status-sub { font-size: 16px; margin-top: 5px; opacity: 0.8; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Responsive styling */
+  @media (max-width: 850px) {
+    .game-wrapper { flex-direction: column-reverse; }
+    .controls-sidebar { width: 100%; box-sizing: border-box; }
+    .mines-grid { gap: 8px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="../dashboard.html" class="btn-back">← Back</a>
+  <div class="wallet-disp">
+    <div class="icon"></div>
+    <span id="walletText">₹0.00</span>
+  </div>
+</div>
+
+<div class="game-wrapper">
+  <!-- Sidebar -->
+  <div class="controls-sidebar">
+    <div class="toggle-group">
+      <div class="toggle-btn active" id="manualToggle">Manual</div>
+      <div class="toggle-btn" id="autoToggle">Auto</div>
+    </div>
+
+    <!-- Bet Amount -->
+    <div>
+      <div class="input-label"><span>Bet Amount</span><span id="maxBetInfo" style="color:#00e701;cursor:pointer;">₹0.00</span></div>
+      <div class="input-box">
+        <div class="input-addon">₹</div>
+        <input type="number" id="betAmount" value="0.00" min="0" step="0.01">
+        <div class="action-btns">
+          <button id="btnHalf">½</button>
+          <button id="btnDouble">2×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mines Dropdown -->
+    <div>
+      <div class="input-label">Mines</div>
+      <div class="input-box">
+        <select id="minesCount">
+          <!-- JS fills options 1-24 -->
+        </select>
+        <div class="input-addon">▼</div>
+      </div>
+    </div>
+    
+    <!-- Gems Box -->
+    <div>
+      <div class="input-label">Gems</div>
+      <div class="input-box" style="background:#1a2c38;">
+        <input type="text" id="gemsCount" value="22" disabled>
+      </div>
+    </div>
+
+    <button class="bet-btn" id="betBtn">Bet</button>
+    <button class="random-btn" id="randomBtn" disabled>Random Pick</button>
+
+    <!-- Profit Indicator -->
+    <div>
+      <div class="input-label"><span>Total Profit (<span id="currentMultiLabel">1.00</span>×)</span></div>
+      <div class="input-box" style="background:#1a2c38;">
+        <div class="input-addon">₹</div>
+        <input type="text" id="totalProfit" value="0.00" disabled style="color:#1fff20;">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Game Area -->
+  <div class="game-area">
+    <div class="mines-grid" id="grid">
+      <!-- Generated by JS -->
+    </div>
+    
+    <div class="status-overlay" id="statusOverlay">
+      <div class="status-banner" id="statusBanner">
+        <div id="statusTitle">1.25x</div>
+        <div class="status-sub" id="statusSub">Multiplier</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // DOM Error Injector (Impossible to ignore)
+  function panic(title, details) {
+    document.body.innerHTML = `
+      <div style="background:#ff2a2a; color:white; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 40px;">
+        <h1 style="font-size: 50px; margin-bottom: 20px;">🚨 ${title}</h1>
+        <p style="font-size: 24px;">${details}</p>
+        <p style="margin-top:20px;">Please take a screenshot of this red screen and show Antigravity!</p>
+        <button onclick="window.location.reload()" style="margin-top:40px; padding:20px 40px; font-size: 20px; cursor:pointer; color:black;">Reload Game</button>
+      </div>`;
+    throw new Error(title + " | " + details);
+  }
+
+  /* --- NETWORK API SYNC --- */
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    window.location.href = "../index.html";
+  }
+
+  async function apiFetch(endpoint, method, body) {
+    let res;
+    try {
+      res = await fetch(`https://backend-xpnz.onrender.com/api/games/mines/${endpoint}/`, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+    } catch (e) {
+      panic("API SERVER OFFLINE", "Make sure your Node server (`node server.js`) is actively running in the command prompt! Browser failed to connect: " + e.message);
+    }
+    
+    if (res.status === 401) {
+       localStorage.removeItem('access_token');
+       panic("SESSION EXPIRED", "Your login badge expired. Please go back and log in again.");
+    }
+    return res;
+  }
+
+  /* --- WALLET SIMULATION --- */
+  let walletBalance = parseFloat(localStorage.getItem('walletBalance'));
+  if (isNaN(walletBalance)) walletBalance = 0;
+  
+  const walletText = document.getElementById('walletText');
+  const maxBetInfo = document.getElementById('maxBetInfo');
+  
+  function updateWalletDisplay() {
+    walletText.innerText = '₹' + walletBalance.toFixed(2);
+    maxBetInfo.innerText = '₹' + walletBalance.toFixed(2);
+    localStorage.setItem('walletBalance', walletBalance.toFixed(2));
+  }
+  updateWalletDisplay();
+
+  /* --- UI ELEMENTS --- */
+  const betAmountInput = document.getElementById('betAmount');
+  const btnHalf = document.getElementById('btnHalf');
+  const btnDouble = document.getElementById('btnDouble');
+  const minesCountSelect = document.getElementById('minesCount');
+  const gemsCountInput = document.getElementById('gemsCount');
+  const betBtn = document.getElementById('betBtn');
+  const randomBtn = document.getElementById('randomBtn');
+  const totalProfitInput = document.getElementById('totalProfit');
+  const currentMultiLabel = document.getElementById('currentMultiLabel');
+  const gridContainer = document.getElementById('grid');
+  
+  const statusOverlay = document.getElementById('statusOverlay');
+  const statusBanner = document.getElementById('statusBanner');
+  const statusTitle = document.getElementById('statusTitle');
+  const statusSub = document.getElementById('statusSub');
+
+  /* --- GAME STATE --- */
+  let isPlaying = false;
+  let tiles = []; // 0 to 24
+  let bombPositions = [];
+  let revealedCount = 0;
+  let currentBet = 0;
+  let currentMines = 3;
+  let currentMulti = 1.0;
+  let activeGameId = null;
+
+  // Initialize Dropdown
+  for (let i = 1; i <= 24; i++) {
+    let opt = document.createElement('option');
+    opt.value = i; opt.innerText = i;
+    if(i === 3) opt.selected = true;
+    minesCountSelect.appendChild(opt);
+  }
+
+  minesCountSelect.addEventListener('change', (e) => {
+    if (isPlaying) return;
+    currentMines = parseInt(e.target.value);
+    gemsCountInput.value = 25 - currentMines;
+  });
+
+  /* --- BET BUTTON LOGIC --- */
+  btnHalf.onclick = () => { if(!isPlaying) { let v = parseFloat(betAmountInput.value)/2; betAmountInput.value = (v>0?v:0).toFixed(2); } };
+  btnDouble.onclick = () => { if(!isPlaying) { let v = parseFloat(betAmountInput.value)*2; betAmountInput.value = (v>0?v:0).toFixed(2); } };
+  
+  maxBetInfo.onclick = () => {
+    if(!isPlaying) { betAmountInput.value = walletBalance.toFixed(2); }
+  }
+
+  betBtn.addEventListener('click', () => {
+    if (!isPlaying) {
+      startGame();
+    } else {
+      cashout();
+    }
+  });
+  
+  randomBtn.addEventListener('click', () => {
+    if (!isPlaying) return;
+    pickRandomTile();
+  });
+
+  function initGrid() {
+    gridContainer.innerHTML = '';
+    tiles = [];
+    for (let i = 0; i < 25; i++) {
+      let t = document.createElement('div');
+      t.className = 'tile';
+      t.dataset.idx = i;
+      
+      let img = document.createElement('img');
+      img.src = ''; // Will be set on reveal
+      t.appendChild(img);
+      
+      let multiPopup = document.createElement('div');
+      multiPopup.className = 'multi-text';
+      t.appendChild(multiPopup);
+
+      t.onclick = () => handleTileClick(i);
+      gridContainer.appendChild(t);
+      tiles.push(t);
+    }
+    gridContainer.classList.remove('active');
+    statusOverlay.style.display = 'none';
+  }
+
+  function resetInputs() {
+      betAmountInput.disabled = false;
+      minesCountSelect.disabled = false;
+      btnHalf.disabled = false;
+      btnDouble.disabled = false;
+      betBtn.disabled = false;
+  }
+
+  async function startGame() {
+    let bet = parseFloat(betAmountInput.value);
+    if (isNaN(bet) || bet < 0) bet = 0;
+    
+    currentMines = parseInt(minesCountSelect.value);
+    
+    // Disable inputs physically
+    betAmountInput.disabled = true;
+    minesCountSelect.disabled = true;
+    btnHalf.disabled = true;
+    btnDouble.disabled = true;
+    betBtn.disabled = true;
+    betBtn.innerText = "CONNECTING...";
+    
+    // Attempt Server Sync
+    const res = await apiFetch('start', 'POST', { bet: bet, mines: currentMines });
+    
+    let data;
+    try {
+      data = await res.json();
+    } catch(e) {
+      panic("SERVER CORRUPTION", "Node server sent an invalid payload. It crashed formatting the Game start sequence.");
+    }
+    
+    if (!res.ok) {
+       alert(data.detail || "Failed to start game. Bet may be larger than wallet.");
+       resetInputs();
+       betBtn.innerText = "Bet";
+       return;
+    }
+    
+    if (!data.game_id) {
+       panic("DATABASE ID MISSING", "The server accepted the bet but failed to link the game to your account!");
+    }
+    
+    // Successfully started server-side!
+    activeGameId = data.game_id;
+    walletBalance = parseFloat(data.wallet_balance); // Sync with absolute server truth
+    updateWalletDisplay();
+
+    // Reset State
+    revealedCount = 0;
+    currentMulti = 1.0;
+    currentBet = bet;
+    isPlaying = true;
+    bombPositions = []; 
+    
+    initGrid();
+    gridContainer.classList.add('active');
+    randomBtn.disabled = false;
+    
+    updateProfitUI();
+    
+    // FORCE UPDATE BUTTON
+    betBtn.className = 'bet-btn active';
+    betBtn.innerText = 'CLICK THE TILES IN THE GRID ->';
+    betBtn.style.backgroundColor = "#ff9800"; // Loud Orange
+    betBtn.disabled = false;
+  }
+
+  async function handleTileClick(idx) {
+    if (!isPlaying) return;
+    if (!activeGameId) panic("GAME ID LOST", "You clicked a tile, but your browser forgot what game you are in!");
+    
+    let t = tiles[idx];
+    if (t.classList.contains('revealed') || t.classList.contains('processing')) return;
+    
+    t.classList.add('processing'); // prevent double click
+    
+    const res = await apiFetch('click', 'POST', { game_id: activeGameId, tile: idx });
+    let data;
+    try {
+       data = await res.json();
+    } catch(e) {
+       panic("CLICK CRASHED", "Node server exploded during click tile mapping!");
+    }
+    
+    t.classList.remove('processing');
+    
+    if (!res.ok) {
+       panic("TILE ERROR", data.detail || "The server rejected that tile click.");
+       return;
+    }
+    
+    if (data.status === "exploded") {
+        bombPositions = data.secret_board; // Server finally reveals the board!
+        revealMine(t, true);
+        triggerBombExplosion();
+    } else if (data.status === "safe") {
+        currentMulti = parseFloat(data.multiplier);
+        revealGem(t);
+    } else if (data.status === "cashed_out") {
+        currentMulti = parseFloat(data.multiplier);
+        bombPositions = data.secret_board; // Reveal all
+        revealGem(t);
+        
+        walletBalance = data.payout ? (walletBalance + parseFloat(data.payout)) : walletBalance; 
+        updateWalletDisplay();
+        triggerCashoutEnd(data.payout);
+    }
+  }
+  
+  function pickRandomTile() {
+    let unrevealed = [];
+    tiles.forEach((t, i) => { if (!t.classList.contains('revealed')) unrevealed.push(i); });
+    if(unrevealed.length > 0) {
+      let pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+      handleTileClick(pick);
+    }
+  }
+
+  function revealGem(tile) {
+    tile.classList.add('revealed', 'gem');
+    let img = tile.querySelector('img');
+    img.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💎</text></svg>`;
+    
+    revealedCount++;
+    updateProfitUI();
+
+    let multiText = tile.querySelector('.multi-text');
+    multiText.innerText = currentMulti.toFixed(2) + '×';
+    multiText.style.display = 'block';
+
+    let payout = currentBet * currentMulti;
+    betBtn.className = 'bet-btn cashout';
+    betBtn.style.backgroundColor = "#1fff20"; // Return to green
+    betBtn.innerText = `Cashout ₹${payout.toFixed(2)}`;
+  }
+
+  function revealMine(tile, causedLoss = false) {
+    tile.classList.add('revealed', 'mine');
+    if (causedLoss) tile.classList.add('exploded');
+    
+    let img = tile.querySelector('img');
+    img.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💣</text></svg>`;
+    
+    if (!causedLoss) img.style.opacity = '0.4';
+  }
+
+  function triggerBombExplosion() {
+    isPlaying = false;
+    randomBtn.disabled = true;
+    gridContainer.classList.remove('active');
+    
+    tiles.forEach((t, i) => {
+      if (!t.classList.contains('revealed')) {
+        if (bombPositions.includes(i)) revealMine(t, false);
+        else {
+           t.classList.add('revealed');
+           let img = t.querySelector('img');
+           img.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💎</text></svg>`;
+           img.style.opacity = '0.2';
+        }
+      }
+    });
+
+    betBtn.className = 'bet-btn';
+    betBtn.style.backgroundColor = "#1fff20";
+    betBtn.innerText = 'Bet';
+    totalProfitInput.value = "0.00";
+    currentMultiLabel.innerText = "0.00";
+    
+    resetInputs();
+    showBanner("0.00x", "Multiplier", true);
+  }
+
+  async function cashout() {
+    if (!isPlaying || revealedCount === 0 || !activeGameId) return;
+    
+    betBtn.disabled = true;
+    betBtn.innerText = "Processing...";
+    
+    const res = await apiFetch('cashout', 'POST', { game_id: activeGameId });
+    let data;
+    try {
+      data = await res.json();
+    } catch(e) {
+      panic("CASHOUT ERROR", "Node server failed to process cashout correctly!");
+    }
+    
+    if (!res.ok) {
+       panic("CASHOUT REJECTED", data.detail || "Cashout failed on backend.");
+       return;
+    }
+    
+    bombPositions = data.secret_board;
+    walletBalance = parseFloat(data.wallet_balance);
+    updateWalletDisplay();
+    triggerCashoutEnd(parseFloat(data.payout));
+  }
+
+  function triggerCashoutEnd(payout) {
+    isPlaying = false;
+    randomBtn.disabled = true;
+    gridContainer.classList.remove('active');
+    
+    tiles.forEach((t, i) => {
+      if (!t.classList.contains('revealed')) {
+        if (bombPositions.includes(i)) revealMine(t, false);
+      }
+    });
+
+    betBtn.className = 'bet-btn';
+    betBtn.style.backgroundColor = "#1fff20";
+    betBtn.innerText = 'Bet';
+    betBtn.disabled = false;
+    resetInputs();
+    
+    showBanner(`${currentMulti.toFixed(2)}x`, `Payout ₹${payout.toFixed(2)}`, false);
+  }
+  
+  function updateProfitUI() {
+    let payout = currentBet * currentMulti;
+    totalProfitInput.value = payout.toFixed(2);
+    currentMultiLabel.innerText = currentMulti.toFixed(2);
+  }
+  
+  function showBanner(title, sub, isLoss) {
+    statusBanner.className = isLoss ? 'status-banner loss' : 'status-banner';
+    statusTitle.innerText = title;
+    statusSub.innerText = sub;
+    statusOverlay.style.display = 'flex';
+  }
+
+  // Startup
+  initGrid();
+  
+</script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match - Game Zone</title>
+<style>
+  body { 
+    background-color: #0f212e; /* Stake dark */
+    color: #b1bad3; 
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    margin: 0; 
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+  }
+  
+  /* Top Bar */
+  .header { 
+    display: flex; justify-content: space-between; padding: 15px 20px; 
+    background: #1a2c38;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .btn-back { background: #2f4553; color: #b1bad3; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; transition: background 0.2s; }
+  .btn-back:hover { background: #3d5566; color: white; }
+  
+  .wallet-disp { font-size: 16px; font-weight: bold; color: white; padding: 5px 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px; background: transparent;}
+  .wallet-disp .icon { width: 24px; height: 24px; background: url('../images/wallet-icon.png') no-repeat center/contain; }
+  
+  /* Main Container */
+  .game-wrapper {
+    display: flex;
+    flex: 1;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 20px;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Left Controls Sidebar */
+  .controls-sidebar {
+    width: 300px;
+    background-color: #213743;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  /* Input Groups */
+  .input-label { font-size: 13px; margin-bottom: 5px; font-weight: 600; color: #b1bad3; display: flex; justify-content: space-between; }
+  .input-box { background: #0f212e; border: 2px solid transparent; border-radius: 4px; display: flex; align-items: center; transition: 0.2s; }
+  .input-box:focus-within { border-color: #2f4553; }
+  .input-box input, .input-box select { background: transparent; border: none; color: white; padding: 12px; font-weight: 600; font-size: 14px; width: 100%; outline: none; flex: 1; -moz-appearance: textfield; appearance: textfield; }
+  .input-box input::-webkit-outer-spin-button, .input-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .input-addon { padding: 0 10px; color: #b1bad3; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+  
+  .bet-notice { font-size:11px; color:#facc15; margin-top:-5px; }
+
+  /* Buttons */
+  .bet-btn { background: #1fff20; color: #000; box-shadow: 0 0 10px rgba(31, 255, 32, 0.4); border: none; padding: 16px; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+  .bet-btn.active-bet { background: #2f4553; color: white; box-shadow: none; cursor: not-allowed; }
+  .bet-btn:hover:not(.active-bet) { opacity: 0.9; }
+
+  /* Right Game Area */
+  .game-area {
+    flex: 1;
+    background-color: #0b1821;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    flex-direction: column;
+  }
+
+  /* Multiplier Display Header */
+  .hud-area {
+    position: absolute; top: 20px; width: 100%; display: flex; justify-content: center; z-index: 5;
+  }
+  .hud-badge {
+    background: #1a2c38; padding: 12px 30px; border-radius: 40px; font-weight: bold;
+    font-size: 20px; color: #1fff20; box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    transition: 0.3s;
+  }
+  .hud-badge.danger { color: #facc15; }
+  .hud-badge.critical { color: #ff2a2a; animation: shake 0.5s infinite; }
+  @keyframes shake { 0% {transform:translateX(0)} 25% {transform:translateX(-5px)} 50% {transform:translateX(5px)} 100% {transform:translateX(0)} }
+
+  /* 4x4 Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 90px);
+    grid-template-rows: repeat(4, 90px);
+    gap: 12px;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: 0.3s;
+    margin-top: 40px;
+  }
+  .grid.active { opacity: 1; pointer-events: auto; }
+
+  .card-container {
+    width: 100%; height: 100%; perspective: 1000px; cursor: pointer;
+  }
+
+  .card {
+    width: 100%; height: 100%; position: relative; transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 40px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+
+  .card-back {
+    /* What user sees before flipping */
+    background: #2f4553; border: 2px solid #3d5566; color: #1a2c38;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);
+  }
+  .card-back::after { content: '?'; position: absolute; font-size: 30px; font-weight: bold; opacity: 0.5; }
+  .card-container:hover .card-back { background: #3d5566; }
+
+  .card-front {
+    /* What user sees after flipping */
+    background: #213743; border: 2px solid #5e7bf5;
+    transform: rotateY(180deg);
+  }
+  
+  .card.matched .card-front {
+    background: #214032; border-color: #00e701; filter: drop-shadow(0 0 5px rgba(0,231,1,0.5));
+  }
+
+  /* Status Overlay */
+  .status-overlay {
+    position: absolute; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    inset: 0; pointer-events: none; z-index: 20;
+    background: rgba(0,0,0,0.6);
+  }
+  .status-banner {
+    background: #1fff20; color: #000; padding: 15px 40px; border-radius: 8px; font-size: 24px; font-weight: 800; box-shadow: 0 10px 20px rgba(0,0,0,0.5); text-align: center;
+    animation: popIn 0.3s forwards;
+  }
+  .status-banner.loss { background: #ff2a2a; color: white; }
+  .status-sub { font-size: 16px; margin-top: 5px; opacity: 0.8; font-weight:bold; }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+  @media (max-width: 850px) {
+    .game-wrapper { flex-direction: column-reverse; overflow-y: auto; }
+    .controls-sidebar { width: 100%; }
+    .game-area { min-height: 500px; }
+    .grid { grid-template-columns: repeat(4, 70px); grid-template-rows: repeat(4, 70px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="../dashboard.html" class="btn-back">← Back</a>
+  <div class="wallet-disp">
+    <div class="icon"></div>
+    <span id="walletText">₹0.00</span>
+  </div>
+</div>
+
+<div class="game-wrapper">
+  <!-- Sidebar -->
+  <div class="controls-sidebar">
+
+    <!-- Bet Amount -->
+    <div>
+      <div class="input-label"><span>Bet Amount</span><span id="maxBetInfo" style="color:#1fff20;cursor:pointer;">₹0.00</span></div>
+      <div class="input-box">
+        <div class="input-addon">₹</div>
+        <input type="number" id="betAmount" value="50.00" min="0" step="0.01">
+      </div>
+      <div class="bet-notice">Bet limits: ₹0 OR ₹50 - ₹100</div>
+    </div>
+
+    <!-- Info Box -->
+    <div style="background:#1a2c38; padding:15px; border-radius:4px; font-size:13px; line-height:1.5;">
+      <strong>How to play:</strong> Start with <span style="color:#1fff20">5.00x</span> multiplier. Every mismatched pair reduces it by <span style="color:#facc15">0.50x</span>. Match all pairs before dropping to <span style="color:#ff2a2a">0.00x</span> to win!
+    </div>
+
+    <button class="bet-btn" id="betBtn">Bet & Reveal Grid</button>
+
+    <!-- Profit Indicator -->
+    <div style="margin-top:20px;">
+      <div class="input-label"><span>Potential Profit (<span id="currentMultiLabel">5.00</span>×)</span></div>
+      <div class="input-box" style="background:#1a2c38;">
+        <div class="input-addon">₹</div>
+        <input type="text" id="totalProfit" value="0.00" disabled style="color:#1fff20;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Area -->
+  <div class="game-area">
+    
+    <div class="hud-area">
+      <div class="hud-badge" id="hudBadge">5.00x</div>
+    </div>
+
+    <div class="grid" id="grid">
+      <!-- Generated via JS -->
+    </div>
+    
+    <div class="status-overlay" id="statusOverlay">
+      <div class="status-banner" id="statusBanner">
+        <div id="statusTitle">WIN</div><div class="status-sub" id="statusSub">Multiplier</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // DOM Error Injector
+  function panic(title, details) {
+    document.body.innerHTML = `
+      <div style="background:#ff2a2a; color:white; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 40px;">
+        <h1 style="font-size: 50px; margin-bottom: 20px;">🚨 ${title}</h1>
+        <p style="font-size: 24px;">${details}</p>
+        <button onclick="window.location.reload()" style="margin-top:40px; padding:20px 40px; font-size: 20px; cursor:pointer; color:black;">Reload Game</button>
+      </div>`;
+    throw new Error(title + " | " + details);
+  }
+
+  const token = localStorage.getItem('access_token');
+  if (!token) window.location.href = "../index.html";
+
+  async function apiFetch(endpoint, method, body) {
+    let res;
+    try {
+      res = await fetch(`https://backend-xpnz.onrender.com/api/games/memory/${endpoint}/`, {
+        method: method,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null
+      });
+    } catch(e) {
+      panic("API OFFLINE", "Node server unreachable: " + e.message);
+    }
+    if (res.status === 401) {
+       localStorage.removeItem('access_token');
+       panic("SESSION EXPIRED", "Please log in again.");
+    }
+    return res;
+  }
+
+  let walletBalance = parseFloat(localStorage.getItem('walletBalance')) || 0;
+  const walletText = document.getElementById('walletText');
+  const maxBetInfo = document.getElementById('maxBetInfo');
+  
+  function updateWalletDisplay() {
+    walletText.innerText = '₹' + walletBalance.toFixed(2);
+    maxBetInfo.innerText = '₹' + walletBalance.toFixed(2);
+    localStorage.setItem('walletBalance', walletBalance.toFixed(2));
+  }
+  updateWalletDisplay();
+
+  const betAmountInput = document.getElementById('betAmount');
+  const betBtn = document.getElementById('betBtn');
+  const totalProfitInput = document.getElementById('totalProfit');
+  const currentMultiLabel = document.getElementById('currentMultiLabel');
+  const hudBadge = document.getElementById('hudBadge');
+  
+  const gridEl = document.getElementById('grid');
+  const statusOverlay = document.getElementById('statusOverlay');
+  const statusBanner = document.getElementById('statusBanner');
+  const statusTitle = document.getElementById('statusTitle');
+  const statusSub = document.getElementById('statusSub');
+
+  let isPlaying = false;
+  let currentBet = 0;
+  let currentMulti = 5.00;
+  let activeGameId = null;
+  let flippedCards = []; 
+  let blockInteraction = false;
+
+  function initEmptyGrid() {
+    gridEl.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+       const wrapper = document.createElement('div');
+       wrapper.className = 'card-container';
+       
+       const card = document.createElement('div');
+       card.className = 'card';
+       card.dataset.index = i;
+       
+       const back = document.createElement('div');
+       back.className = 'card-face card-back';
+       
+       const front = document.createElement('div');
+       front.className = 'card-face card-front';
+       front.innerText = ''; // Blank until server responds
+       
+       card.appendChild(back);
+       card.appendChild(front);
+       wrapper.appendChild(card);
+       gridEl.appendChild(wrapper);
+       
+       wrapper.addEventListener('click', () => handleCardClick(card));
+    }
+  }
+  initEmptyGrid();
+
+  maxBetInfo.onclick = () => { if(!isPlaying) { betAmountInput.value = walletBalance.toFixed(2); } }
+
+  betBtn.addEventListener('click', () => {
+    if (isPlaying) return;
+    startGame();
+  });
+
+  async function startGame() {
+    let bet = parseFloat(betAmountInput.value);
+    if (isNaN(bet) || bet < 0) bet = 0;
+    
+    if (bet !== 0 && (bet < 50 || bet > 100)) {
+      alert("Bet must be exactly ₹0.00, or between ₹50.00 and ₹100.00!");
+      return;
+    }
+    
+    betAmountInput.disabled = true;
+    betBtn.className = 'bet-btn active-bet';
+    betBtn.innerText = 'CONNECTING...';
+    
+    const res = await apiFetch('start', 'POST', { bet: bet });
+    let data;
+    try { data = await res.json(); } catch(e) { panic("SERVER GLITCH", "Invalid JSON map during start."); }
+    
+    if (!res.ok) {
+       alert(data.detail || "Failed to start server-side game.");
+       betAmountInput.disabled = false;
+       betBtn.className = 'bet-btn';
+       betBtn.innerText = 'Bet & Reveal Grid';
+       return;
+    }
+    
+    activeGameId = data.game_id;
+    walletBalance = parseFloat(data.wallet_balance);
+    updateWalletDisplay();
+    
+    // Reset Grid
+    initEmptyGrid();
+    currentBet = bet;
+    currentMulti = 5.00;
+    flippedCards = [];
+    blockInteraction = false;
+    updateHUD();
+    
+    statusOverlay.style.display = 'none';
+    gridEl.classList.add('active');
+    
+    gridEl.style.transform = "scale(0.95)";
+    setTimeout(() => gridEl.style.transform = "scale(1)", 200);
+    
+    betBtn.innerText = 'Match in Progress...';
+    isPlaying = true;
+  }
+
+  async function handleCardClick(card) {
+    if(!isPlaying || blockInteraction) return;
+    if(card.classList.contains('flipped')) return; 
+    
+    let idx = parseInt(card.dataset.index);
+    blockInteraction = true; 
+    
+    const res = await apiFetch('click', 'POST', { game_id: activeGameId, card_index: idx });
+    let data;
+    try { data = await res.json(); } catch(e) { panic("CLICK FAILED", "Node server crashed tracking memory memory."); }
+    
+    if (!res.ok) {
+       panic("CARD REJECTED", data.detail || "Server rejected pick.");
+    }
+    
+    let front = card.querySelector('.card-front');
+    front.innerText = data.symbol;
+    card.classList.add('flipped');
+    flippedCards.push(card);
+    
+    if (data.status === "flipped") {
+       // Just the first card
+       blockInteraction = false;
+    } else {
+       // Second card result!
+       if (data.match) {
+           let c1 = flippedCards[0];
+           let c2 = flippedCards[1];
+           setTimeout(() => {
+               c1.classList.add('matched');
+               c2.classList.add('matched');
+               flippedCards = [];
+               blockInteraction = false;
+               
+               if (data.status === "cashed_out") {
+                   walletBalance = parseFloat(data.wallet_balance);
+                   updateWalletDisplay();
+                   triggerEndGame(true, parseFloat(data.payout));
+               }
+           }, 300);
+       } else {
+           // Mismatch!
+           currentMulti = parseFloat(data.multiplier);
+           updateHUD();
+           let c1 = flippedCards[0];
+           let c2 = flippedCards[1];
+           
+           setTimeout(() => {
+               if (data.status !== "exploded") {
+                   c1.classList.remove('flipped');
+                   c2.classList.remove('flipped');
+                   c1.querySelector('.card-front').innerText = '';
+                   c2.querySelector('.card-front').innerText = '';
+               }
+               flippedCards = [];
+               blockInteraction = false;
+               
+               if (data.status === "exploded") {
+                   revealBoard(data.secret_board);
+                   triggerEndGame(false, 0);
+               }
+           }, 800);
+       }
+    }
+  }
+
+  function revealBoard(secretBoard) {
+     let allCards = document.querySelectorAll('.card');
+     secretBoard.forEach((symbol, i) => {
+         let c = allCards[i];
+         if (!c.classList.contains('flipped')) {
+             c.querySelector('.card-front').innerText = symbol;
+             c.classList.add('flipped');
+             c.style.opacity = '0.5';
+         }
+     });
+  }
+
+  function updateHUD() {
+    hudBadge.innerText = currentMulti.toFixed(2) + 'x';
+    if(currentMulti <= 2.00) hudBadge.className = 'hud-badge danger';
+    if(currentMulti <= 1.00) hudBadge.className = 'hud-badge critical';
+    if(currentMulti > 2.00) hudBadge.className = 'hud-badge';
+    
+    let payout = currentBet * currentMulti;
+    totalProfitInput.value = payout.toFixed(2);
+    currentMultiLabel.innerText = currentMulti.toFixed(2);
+  }
+
+  function triggerEndGame(isWin, payout) {
+    isPlaying = false;
+    gridEl.classList.remove('active');
+    blockInteraction = true;
+    
+    totalProfitInput.value = payout.toFixed(2);
+    
+    betAmountInput.disabled = false;
+    betBtn.className = 'bet-btn';
+    betBtn.innerText = 'Bet & Reveal Grid';
+    
+    setTimeout(() => {
+      let title = isWin ? 'YOU WON!' : 'BUST';
+      let sub = `Payout ₹${payout.toFixed(2)}`;
+      statusBanner.className = isWin ? 'status-banner' : 'status-banner loss';
+      
+      statusTitle.innerText = title;
+      statusSub.innerText = sub;
+      statusOverlay.style.display = 'flex';
+    }, 400);
+  }
+</script>
+</body>
+</html>

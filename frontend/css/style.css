@@ -1,0 +1,198 @@
+body
+{
+margin:0;
+padding:0;
+font-family:Arial, sans-serif;
+height:100vh;
+overflow:hidden;
+background:black;
+}
+
+/* MOVING NEON BACKGROUND LOOP */
+.background-animation
+{
+position:absolute;
+width:100%;
+height:100%;
+
+background:linear-gradient(
+270deg,
+#ff0000,
+#ff3300,
+#ff00cc,
+#3333ff,
+#00ffff,
+#ffcc00,
+#ff0000
+);
+
+background-size:600% 600%;
+animation:neonLoop 15s linear infinite;
+z-index:-1;
+}
+
+/* SMOOTH LOOP ANIMATION */
+
+@keyframes neonLoop
+{
+0%
+{
+background-position:0% 50%;
+}
+50%
+{
+background-position:100% 50%;
+}
+100%
+{
+background-position:0% 50%;
+}
+}
+
+/* GLASS LOGIN BOX */
+
+.login-container
+{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:320px;
+padding:40px;
+border-radius:20px;
+background:rgba(0,0,0,0.6);
+backdrop-filter:blur(15px);
+box-shadow:
+0 0 20px #ff0000,
+0 0 40px #00ffff;
+text-align:center;
+color:white;
+}
+
+/* LOGO STYLE */
+
+.logo
+{
+font-size:28px;
+font-weight:bold;
+margin-bottom:20px;
+color:#00ffff;
+text-shadow:
+0 0 10px #00ffff,
+0 0 25px #ff0000;
+}
+
+/* INPUT FIELDS */
+
+input
+{
+width:100%;
+padding:12px;
+margin:10px 0;
+border:none;
+border-radius:10px;
+outline:none;
+font-size:16px;
+}
+
+/* LOGIN BUTTON */
+
+.login-btn
+{
+width:100%;
+padding:12px;
+margin-top:10px;
+background:#00ffff;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.login-btn:hover
+{
+box-shadow:
+0 0 15px #00ffff,
+0 0 35px #00ffff;
+}
+
+/* REGISTER BUTTON */
+.register-btn
+{
+width:100%;
+padding:12px;
+margin-top:10px;
+background:#ff0000;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
+color:white;
+transition:0.3s;
+}
+
+.register-btn:hover
+{
+box-shadow:
+0 0 15px #ff0000,
+0 0 35px #ff0000;
+}
+
+/* FORGOT PASSWORD LINK */
+
+.forgot-link
+{
+display:block;
+margin-top:15px;
+color:#00ffff;
+text-decoration:none;
+}
+
+.forgot-link:hover
+{
+text-decoration:underline;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.password-box
+{
+position:relative;
+width:100%;
+}
+
+.password-box input
+{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+outline:none;
+}
+
+.toggle-eye
+{
+position:absolute;
+right:12px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+font-size:18px;
+color:#00ffff;
+}
+
+
+
+
+

@@ -1,0 +1,131 @@
+/* --- 1. THE BRAIN: DARK & LIGHT THEMES --- */
+:root {
+  /* DARK MODE (Red Fire) */
+  --bg-color: #0c0c0c;
+  --panel-bg: #111111;
+  --text-color: #ffffff;
+  
+  /* The Fire Colors (Deep Red to Bright Orange) */
+  --fire-1: #b91c1c; 
+  --fire-2: #ef4444; 
+  --fire-3: #facc15; 
+  
+  --monster-img: url('images/reaper-red.png'); /* Put your red monster filename here */
+}
+
+body.light-mode {
+  /* LIGHT MODE (Blue Fire) */
+  --bg-color: #051622;
+  --panel-bg: #0b2434;
+  --text-color: #e0f2fe;
+
+  /* The Blue Fire Colors (Dark Blue to Cyan) */
+  --fire-1: #0369a1;
+  --fire-2: #38bdf8;
+  --fire-3: #91e9ff;
+
+  --monster-img: url('images/reaper-blue.png'); /* Put your blue monster filename here */
+}
+
+/* --- 2. THE MOTOR: ANIMATION FOR THE FLAMES --- */
+@keyframes moveFire {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* --- 3. THE STYLE: MAKING THE PAGE LOOK GOOD --- */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  font-family: sans-serif;
+  transition: 0.5s; /* Makes the color swap smooth */
+}
+
+/* The Animated Border (Apply this class to your Navbar, Cards, and Sidebar) */
+.live-fire {
+  border: 3px solid transparent;
+  border-image-slice: 1;
+  
+  /* This creates the moving gradient effect */
+  border-image-source: linear-gradient(
+    45deg, 
+    var(--fire-1), 
+    var(--fire-2), 
+    var(--fire-3), 
+    var(--fire-1)
+  );
+  
+  animation: moveFire 3s linear infinite;
+  background-size: 400% 400%;
+  box-shadow: 0 0 15px var(--fire-2); /* The 'Glow' effect */
+}
+
+/* --- 4. DASHBOARD LAYOUT --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: var(--panel-bg);
+}
+
+.logo-area img {
+  height: 50px;
+}
+
+.games-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+  gap: 20px;
+  padding: 50px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.game-card {
+  height: 200px;
+  background: #1c1c1c;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: 0.3s ease;
+  overflow: hidden;
+}
+
+/* The 'Pop' animation when mouse is over a game */
+.game-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 10px 30px var(--fire-1);
+}
+
+.game-card img {
+  width: 100%;
+  height: 80%;
+  object-fit: cover;
+}
+
+.game-title {
+  height: 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.5);
+  font-weight: bold;
+}
+
+/* --- 5. THE MONSTER (Bottom Right) --- */
+.reaper {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 300px;
+  height: 350px;
+  background-image: var(--monster-img);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  pointer-events: none; /* So you can click things 'behind' the monster */
+  z-index: 100;
+}
