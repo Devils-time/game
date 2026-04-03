@@ -92,8 +92,9 @@
   .choice-btn:hover:not(:disabled) { background: #3d5566; }
   .choice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   
-  .icon-heads { width: 16px; height: 16px; border-radius: 50%; background: url('../images/coin-sprite.jpg') no-repeat left center; background-size: 200% 100%; }
-  .icon-tails { width: 16px; height: 16px; border-radius: 50%; background: url('../images/coin-sprite.jpg') no-repeat right center; background-size: 200% 100%; display: inline-block;}
+  .icon-heads { width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #f1c40f, #e67e22); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+  .icon-tails { width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #9b59b6, #3498db); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+  .icon-tails::after { content: ''; width: 6px; height: 6px; background: rgba(0,0,0,0.3); transform: rotate(45deg); display: block; }
 
   /* Right Game Area */
   .game-area {
@@ -138,22 +139,30 @@
   
   /* Face: Heads (Yellow/Orange) */
   .coin-front {
-    background: url('../images/coin-sprite.jpg') no-repeat left center;
-    background-size: 200% 100%;
+    background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);
     z-index: 2;
   }
   .coin-front .inner-shape {
-    display: none;
+    display: block;
+    width: 60%;
+    height: 60%;
+    background: #f39c12;
+    border-radius: 50%;
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.2);
   }
   
   /* Face: Tails (Purple/Blue) */
   .coin-back {
-    background: url('../images/coin-sprite.jpg') no-repeat right center;
-    background-size: 200% 100%;
+    background: linear-gradient(135deg, #9b59b6 0%, #3498db 100%);
     transform: rotateY(180deg);
   }
   .coin-back .inner-shape {
-    display: none;
+    display: block;
+    width: 50%;
+    height: 50%;
+    background: rgba(0, 0, 0, 0.15);
+    transform: rotate(45deg);
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.2);
   }
 
   /* History Bar */
@@ -293,7 +302,7 @@
   async function apiFetch(endpoint, method, body) {
     let res;
     try {
-      res = await fetch(`https://backend-xpnz.onrender.com/api/games/flip/${endpoint}/`, {
+      res = await fetch(`http://127.0.0.1:8000/api/games/flip/${endpoint}/`, {
         method: method,
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : null

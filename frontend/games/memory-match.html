@@ -248,7 +248,7 @@
   async function apiFetch(endpoint, method, body) {
     let res;
     try {
-      res = await fetch(`https://backend-xpnz.onrender.com/api/games/memory/${endpoint}/`, {
+      res = await fetch(`http://127.0.0.1:8000/api/games/memory/${endpoint}/`, {
         method: method,
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : null

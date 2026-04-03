@@ -320,7 +320,7 @@
   async function apiFetch(endpoint, method, body) {
     let res;
     try {
-      res = await fetch(`https://backend-xpnz.onrender.com/api/games/mines/${endpoint}/`, {
+      res = await fetch(`http://127.0.0.1:8000/api/games/mines/${endpoint}/`, {
         method: method,
         headers: {
           'Authorization': `Bearer ${token}`,
