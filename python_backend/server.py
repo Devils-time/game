@@ -391,22 +391,28 @@ def memory_click():
             flipped = []
             
             if len(matched) == 16:
-                payout = game['bet_amount'] * 5.00
-                cursor.execute('UPDATE memory_games SET status = "win", matched_pairs = ?, flipped_indexes = "[]" WHERE id = ?', (json.dumps(matched), game['id']))
+                payout = game['bet_amount'] * game['multiplier']
+                cursor.execute('UPDATE memory_games SET status = "cashed_out", matched_pairs = ?, flipped_indexes = "[]" WHERE id = ?', (json.dumps(matched), game['id']))
                 cursor.execute('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?', (payout, user_id))
                 db.commit()
                 cursor.execute('SELECT wallet_balance FROM users WHERE id = ?', (user_id,))
                 user = cursor.fetchone()
-                return jsonify({'status': 'match_win', 'symbol': symbol, 'payout': payout, 'wallet_balance': user['wallet_balance']})
+                return jsonify({'match': True, 'status': 'cashed_out', 'symbol': symbol, 'payout': payout, 'wallet_balance': user['wallet_balance']})
             else:
                 cursor.execute('UPDATE memory_games SET matched_pairs = ?, flipped_indexes = "[]" WHERE id = ?', (json.dumps(matched), game['id']))
                 db.commit()
-                return jsonify({'status': 'match', 'symbol': symbol})
+                return jsonify({'match': True, 'status': 'match', 'symbol': symbol})
         else:
             flipped = []
-            cursor.execute('UPDATE memory_games SET flipped_indexes = "[]" WHERE id = ?', (game['id'],))
-            db.commit()
-            return jsonify({'status': 'mismatch', 'symbol': symbol, 'pair': [first_idx, second_idx]})
+            new_multi = max(0.00, game['multiplier'] - 0.50)
+            if new_multi <= 0.00:
+                cursor.execute('UPDATE memory_games SET status = "exploded", flipped_indexes = "[]" WHERE id = ?', (game['id'],))
+                db.commit()
+                return jsonify({'match': False, 'status': 'exploded', 'multiplier': new_multi, 'secret_board': board})
+            else:
+                cursor.execute('UPDATE memory_games SET multiplier = ?, flipped_indexes = "[]" WHERE id = ?', (new_multi, game['id']))
+                db.commit()
+                return jsonify({'match': False, 'status': 'mismatch', 'multiplier': new_multi, 'symbol': symbol, 'pair': [first_idx, second_idx]})
 
 # --- GAME: DRAGON TOWER ---
 def get_tower_prob(difficulty):

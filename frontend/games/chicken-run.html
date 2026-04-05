@@ -275,6 +275,37 @@
 </div>
 
 <script>
+  // DOM Error Injector
+  function panic(title, details) {
+    document.body.innerHTML = `
+      <div style="background:#ff2a2a; color:white; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 40px;">
+        <h1 style="font-size: 50px; margin-bottom: 20px;">🚨 ${title}</h1>
+        <p style="font-size: 24px;">${details}</p>
+        <button onclick="window.location.reload()" style="margin-top:40px; padding:20px 40px; font-size: 20px; cursor:pointer; color:black;">Reload Game</button>
+      </div>`;
+  }
+
+  const token = localStorage.getItem('access_token');
+  if (!token) window.location.href = "../index.html";
+
+  async function apiFetch(endpoint, method, body) {
+    let res;
+    try {
+      res = await fetch(`http://127.0.0.1:8000/api/games/chicken/${endpoint}/`, {
+        method: method,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null
+      });
+    } catch(e) {
+      panic("API OFFLINE", "Server unreachable: " + e.message);
+    }
+    if (res && res.status === 401) {
+       localStorage.removeItem('access_token');
+       panic("SESSION EXPIRED", "Please log in again.");
+    }
+    return res;
+  }
+
   /* --- WALLET SIMULATION --- */
   let walletBalance = parseFloat(localStorage.getItem('walletBalance'));
   if (isNaN(walletBalance)) { walletBalance = 0; localStorage.setItem('walletBalance', walletBalance.toFixed(2)); }
